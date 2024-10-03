@@ -1,0 +1,12 @@
+langchain
+langgraph
+pypdf
+langchain_community
+langchain-text-splitters
+langchain-huggingface
+langchain-pinecone
+pinecone-notebooks
+python-dotenv
+langchain-groq
+langchain-cli
+langserve[server]
