@@ -10,3 +10,4 @@ python-dotenv
 langchain-groq
 langchain-cli
 langserve[server]
+streamlit
