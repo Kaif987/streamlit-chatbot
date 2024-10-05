@@ -7,9 +7,11 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
+from langchain_core.vectorstores import InMemoryVectorStore
 import random
 import string
 import os
+from pypdf import PdfReader
 
 # split your document into chunks
 def load_and_split_docs(path): 
@@ -21,6 +23,36 @@ def load_and_split_docs(path):
     docs = loader.load_and_split(text_splitter)
     return docs
 
+# read the pdf and split the documents
+def read_pdf_and_split_docs(file):
+    reader = PdfReader(file)
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text()
+
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=300,
+        chunk_overlap=20,
+    )
+
+    docs = text_splitter.create_documents([text])
+    return docs
+
+# created embeddings and store them in memory
+def store_embeddings_in_memory(docs):
+    model = "sentence-transformers/all-mpnet-base-v2"
+    HUGGGINGFACEHUB_API_KEY = os.getenv("HUGGGINGFACEHUB_API_KEY")
+    # create embeddings from the documents
+    embeddings = HuggingFaceEndpointEmbeddings(
+        model=model,
+        task="feature-extraction",
+        huggingfacehub_api_token= HUGGGINGFACEHUB_API_KEY,
+    )
+
+    vector_store = InMemoryVectorStore(embeddings)
+    vector_store.add_documents(docs)
+    return vector_store
+
 # create embeddings from the documents and upsert them to pinecone
 def upsert_to_pinecone(docs, index_name):
     model = "sentence-transformers/all-mpnet-base-v2"
@@ -31,7 +63,6 @@ def upsert_to_pinecone(docs, index_name):
         task="feature-extraction",
         huggingfacehub_api_token= HUGGGINGFACEHUB_API_KEY,
     )
-    print(embeddings)
 
     PINECONE_API_KEY= os.getenv("PINECONE_API_KEY")
     pc = Pinecone(PINECONE_API_KEY)

@@ -1,7 +1,6 @@
 from dotenv import load_dotenv
 import streamlit as st
-from utils import load_and_split_docs, upsert_to_pinecone, create_chain ,random_string
-import os
+from utils import create_chain, read_pdf_and_split_docs, store_embeddings_in_memory
 
 load_dotenv()
 
@@ -17,17 +16,12 @@ def main():
 
     if "chain" not in st.session_state: 
         if uploaded_file is not None:
-          
-            file_details = {"FileName":uploaded_file.name,"FileType": uploaded_file.type}
-            st.session_state.file_details = file_details
-            st.write(file_details)
-            with open(os.path.join("/home/kaif-siddiqui/2024/python-langchan/pinecone-chatbot/python-agent/tempDir",uploaded_file.name),"wb") as f: 
-                f.write(uploaded_file.getbuffer())         
-                st.success("Saved File")
-                docs = load_and_split_docs("/home/kaif-siddiqui/2024/python-langchan/pinecone-chatbot/python-agent/tempDir/"+ uploaded_file.name)
-                vector_store = upsert_to_pinecone(docs, random_string())
-                chain = create_chain(vector_store)
-                st.session_state.chain = chain
+            st.success("Saved File")
+            docs = read_pdf_and_split_docs(uploaded_file)
+            vector_store = store_embeddings_in_memory(docs)
+            chain = create_chain(vector_store)
+            st.session_state.chain = chain
+
 
     #  display chat messages in the screeen
     for message in st.session_state.messages:
